@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PromptCraft — The Perfect AI Prompt Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+  display: ['Syne', 'sans-serif'],
+  mono: ['Space Mono', 'monospace'],
+},
+          },
+          colors: {
+            bg: '#0a0a0f',
+            surface: '#111118',
+            card: '#16161f',
+            border: '#252535',
+            accent: '#7c6af7',
+            'accent-2': '#e05bff',
+            glow: '#5b4fe0',
+            muted: '#6b6b85',
+            faint: '#2a2a3d',
+          },
+          boxShadow: {
+            glow: '0 0 40px rgba(124,106,247,0.15)',
+            'glow-lg': '0 0 80px rgba(124,106,247,0.2)',
+            'inner-glow': 'inset 0 1px 0 rgba(124,106,247,0.12)',
+          }
+        }
+      }
+    
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      background-color: #0a0a0f;
+      color: #e2e2f0;
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,106,247,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,106,247,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Ambient glow orbs */
+    .orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      pointer-events: none;
+      z-index: 0;
+      animation: orbFloat 8s ease-in-out infinite;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(124,106,247,0.12) 0%, transparent 70%);
+      top: -150px; left: -100px;
+    }
+    .orb-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(224,91,255,0.08) 0%, transparent 70%);
+      bottom: -100px; right: -50px;
+      animation-delay: -4s;
+    }
+    @keyframes orbFloat {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-30px) scale(1.05); }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #111118; }
+    ::-webkit-scrollbar-thumb { background: #252535; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #7c6af7; }
+
+    /* Custom inputs */
+    .field-input {
+      background: #16161f;
+      border: 1px solid #252535;
+      border-radius: 10px;
+      color: #e2e2f0;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.9rem;
+      transition: all 0.25s ease;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    .field-input::placeholder { color: #4a4a60; }
+    .field-input:focus {
+      border-color: #7c6af7;
+      background: #1a1a25;
+      box-shadow: 0 0 0 3px rgba(124,106,247,0.12), inset 0 1px 0 rgba(124,106,247,0.08);
+    }
+    .field-input:hover:not(:focus) { border-color: #353550; }
+
+    select.field-input {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237c6af7' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 2.5rem;
+      cursor: pointer;
+    }
+    select.field-input option {
+      background: #16161f;
+      color: #e2e2f0;
+    }
+
+    /* Preview textarea */
+    .preview-area {
+      background: #0e0e18;
+      border: 1px solid #252535;
+      border-radius: 14px;
+      color: #c8c8e0;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+      padding: 1.25rem;
+      resize: none;
+      width: 100%;
+      outline: none;
+      min-height: 280px;
+      transition: border-color 0.25s;
+    }
+    .preview-area:focus { border-color: #7c6af7; }
+
+    /* Buttons */
+    .btn-copy {
+      background: linear-gradient(135deg, #7c6af7 0%, #a855f7 50%, #e05bff 100%);
+      background-size: 200% 200%;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.03em;
+      padding: 0.75rem 1.5rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      animation: gradientShift 4s ease infinite;
+    }
+    @keyframes gradientShift {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .btn-copy:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(124,106,247,0.4);
+    }
+    .btn-copy:active { transform: translateY(0px); }
+    .btn-copy.copied {
+      background: linear-gradient(135deg, #10b981, #059669);
+      animation: none;
+    }
+    .btn-copy::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .btn-clear {
+      background: transparent;
+      border: 1px solid #252535;
+      border-radius: 10px;
+      color: #6b6b85;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.75rem 1.5rem;
+      transition: all 0.25s ease;
+    }
+    .btn-clear:hover {
+      border-color: #ff5b6e;
+      color: #ff5b6e;
+      background: rgba(255,91,110,0.06);
+    }
+
+    /* Tags / chips */
+    .role-chip {
+      background: rgba(124,106,247,0.1);
+      border: 1px solid rgba(124,106,247,0.2);
+      border-radius: 6px;
+      color: #a89cf7;
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .role-chip:hover {
+      background: rgba(124,106,247,0.2);
+      border-color: rgba(124,106,247,0.5);
+      color: #c0b4ff;
+      transform: translateY(-1px);
+    }
+
+    /* Label */
+    .field-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #7c6af7;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .field-label .dot {
+      width: 5px; height: 5px;
+      background: #7c6af7;
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.7); }
+    }
+
+    /* Card */
+    .glass-card {
+      background: #16161f;
+      border: 1px solid #252535;
+      border-radius: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    /* Header logo pulse */
+    .logo-icon {
+      animation: logoGlow 3s ease-in-out infinite;
+    }
+    @keyframes logoGlow {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(124,106,247,0.6)); }
+      50% { filter: drop-shadow(0 0 20px rgba(224,91,255,0.8)); }
+    }
+
+    /* Counter badge */
+    .char-count {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      color: #4a4a60;
+      transition: color 0.2s;
+    }
+    .char-count.has-content { color: #7c6af7; }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      box-shadow: 0 8px 32px rgba(16,185,129,0.35);
+      z-index: 9999;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* Highlight spans inside preview */
+    .preview-label {
+      color: #7c6af7;
+      font-weight: 700;
+    }
+
+    /* Animated border on preview card */
+    .preview-card {
+      position: relative;
+    }
+    .preview-card::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 17px;
+      background: linear-gradient(135deg, #7c6af7, #e05bff, #7c6af7);
+      background-size: 200% 200%;
+      animation: borderRotate 4s linear infinite;
+      z-index: -1;
+      opacity: 0.4;
+    }
+    @keyframes borderRotate {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    /* Quality meter */
+    .quality-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #7c6af7, #e05bff);
+      transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 0 10px rgba(124,106,247,0.5);
+    }
+
+    /* Responsive two-col layout */
+    @media (min-width: 1024px) {
+      .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    }
+
+    /* Section separator */
+    .separator {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #252535, transparent);
+      margin: 1.25rem 0;
+    }
+
+    /* Fade-in on load */
+    .fade-in { animation: fadeIn 0.6s ease both; }
+    .fade-in-delay-1 { animation: fadeIn 0.6s ease 0.1s both; }
+    .fade-in-delay-2 { animation: fadeIn 0.6s ease 0.2s both; }
+    .fade-in-delay-3 { animation: fadeIn 0.6s ease 0.3s both; }
+    .fade-in-delay-4 { animation: fadeIn 0.6s ease 0.4s both; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Typing cursor in preview */
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* Mobile spacing */
+    @media (max-width: 640px) {
+      #toast { bottom: 16px; right: 16px; left: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient orbs -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <!-- Main container -->
+  <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+
+    <!-- ─── Header ─── -->
+    <header class="text-center mb-10 fade-in">
+      <div class="inline-flex items-center gap-3 mb-4">
+        <svg class="logo-icon w-9 h-9" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="lg1" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#7c6af7"/>
+              <stop offset="1" stop-color="#e05bff"/>
+            </linearGradient>
+          </defs>
+          <path d="M6 8h24M6 14h16M6 20h20M6 26h12" stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="29" cy="26" r="5" fill="url(#lg1)" opacity="0.9"/>
+          <path d="M27 26l1.5 1.5L31 24.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h1 class="text-3xl sm:text-4xl font-display font-extrabold tracking-tight" style="background: linear-gradient(135deg, #e2e2f0 30%, #a89cf7 70%, #e05bff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+          PromptCraft
+        </h1>
+      </div>
+      <p class="text-muted font-mono text-xs sm:text-sm tracking-widest uppercase">The Perfect AI Prompt Builder</p>
+      <p class="text-sm text-gray-500 mt-2 max-w-lg mx-auto leading-relaxed">
+        Fill in 4 simple fields. Get a perfectly structured prompt for ChatGPT or Claude — instantly.
+      </p>
+      <!-- Stats row -->
+      <div class="flex items-center justify-center gap-5 mt-5">
+        <div class="flex items-center gap-1.5 text-xs font-mono text-muted">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" style="box-shadow:0 0 6px rgba(52,211,153,0.8)"></span>
+          Works with ChatGPT
+        </div>
+        <div class="w-px h-3 bg-border"></div>
+        <div class="flex items-center gap-1.5 text-xs font-mono text-muted">
+          <span class="w-1.5 h-1.5 rounded-full bg-accent inline-block" style="box-shadow:0 0 6px rgba(124,106,247,0.8)"></span>
+          Works with Claude
+        </div>
+        <div class="w-px h-3 bg-border"></div>
+        <div class="flex items-center gap-1.5 text-xs font-mono text-muted">
+          <span class="w-1.5 h-1.5 rounded-full bg-pink-400 inline-block" style="box-shadow:0 0 6px rgba(244,114,182,0.8)"></span>
+          No signup needed
+        </div>
+      </div>
+    </header>
+
+    <!-- ─── Main Grid ─── -->
+    <div class="main-grid">
+
+      <!-- ══ LEFT: Input Panel ══ -->
+      <div class="space-y-4 fade-in-delay-1">
+        <div class="glass-card p-5 sm:p-6">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="font-display font-bold text-base text-white/90 flex items-center gap-2">
+              <span class="text-accent">01</span>
+              <span>Build Your Prompt</span>
+            </h2>
+            <span class="text-xs font-mono text-muted bg-faint px-2 py-1 rounded-md">4 fields</span>
+          </div>
+
+          <!-- Field 1: Role -->
+          <div class="mb-5 fade-in-delay-1">
+            <label class="field-label">
+              <span class="dot"></span>
+              Role / Persona
+            </label>
+            <input
+              id="roleInput"
+              type="text"
+              class="field-input"
+              placeholder="e.g. Senior Marketing Strategist"
+              oninput="updatePreview()"
+              maxlength="120"
+            />
+            <!-- Quick-pick chips -->
+            <div class="flex flex-wrap gap-2 mt-2.5">
+              <button class="role-chip" onclick="setChip('role','Marketing Expert')">Marketing Expert</button>
+              <button class="role-chip" onclick="setChip('role','Senior Developer')">Senior Developer</button>
+              <button class="role-chip" onclick="setChip('role','Data Scientist')">Data Scientist</button>
+              <button class="role-chip" onclick="setChip('role','UX Designer')">UX Designer</button>
+              <button class="role-chip" onclick="setChip('role','Copywriter')">Copywriter</button>
+              <button class="role-chip" onclick="setChip('role','Business Analyst')">Business Analyst</button>
+            </div>
+          </div>
+
+          <div class="separator"></div>
+
+          <!-- Field 2: Task / Goal -->
+          <div class="mb-5">
+            <label class="field-label">
+              <span class="dot" style="animation-delay:0.3s"></span>
+              Task / Goal
+            </label>
+            <textarea
+              id="taskInput"
+              class="field-input"
+              rows="3"
+              placeholder="e.g. Write a viral LinkedIn post about the future of remote work"
+              oninput="updatePreview()"
+              maxlength="400"
+              style="resize:vertical; min-height:80px;"
+            ></textarea>
+            <div class="flex justify-between mt-1.5">
+              <div class="flex flex-wrap gap-1.5">
+                <button class="role-chip" onclick="setChip('task','Write a comprehensive blog post about')">Blog post</button>
+                <button class="role-chip" onclick="setChip('task','Create a step-by-step tutorial for')">Tutorial</button>
+                <button class="role-chip" onclick="setChip('task','Analyze and provide insights on')">Analysis</button>
+                <button class="role-chip" onclick="setChip('task','Draft a persuasive pitch for')">Pitch</button>
+              </div>
+              <span class="char-count" id="taskCount">0/400</span>
+            </div>
+          </div>
+
+          <div class="separator"></div>
+
+          <!-- Field 3: Context -->
+          <div class="mb-5">
+            <label class="field-label">
+              <span class="dot" style="animation-delay:0.6s"></span>
+              Context / Background
+            </label>
+            <textarea
+              id="contextInput"
+              class="field-input"
+              rows="3"
+              placeholder="e.g. My target audience is B2B SaaS founders aged 30-45. Tone should be professional yet conversational."
+              oninput="updatePreview()"
+              maxlength="600"
+              style="resize:vertical; min-height:80px;"
+            ></textarea>
+            <div class="flex justify-end mt-1.5">
+              <span class="char-count" id="contextCount">0/600</span>
+            </div>
+          </div>
+
+          <div class="separator"></div>
+
+          <!-- Field 4: Output Format -->
+          <div class="mb-2">
+            <label class="field-label">
+              <span class="dot" style="animation-delay:0.9s"></span>
+              Output Format
+            </label>
+            <select id="formatInput" class="field-input" onchange="updatePreview()">
+              <option value="">— Choose a format —</option>
+              <option value="clear paragraphs with smooth transitions between ideas">📝 Paragraphs</option>
+              <option value="a well-structured bullet point list with clear, scannable points">• Bullet Points</option>
+              <option value="a clean, well-organized markdown table with relevant headers">📊 Table</option>
+              <option value="a properly commented code block using best practices">💻 Code Block</option>
+              <option value="a professional email with subject line, greeting, body, and sign-off">📧 Professional Email</option>
+              <option value="a numbered step-by-step guide that is easy to follow">🔢 Step-by-Step Guide</option>
+              <option value="a concise executive summary with key takeaways">📋 Executive Summary</option>
+            </select>
+          </div>
+
+          <!-- Tone selector -->
+          <div class="mt-4">
+            <label class="field-label">
+              <span class="dot" style="animation-delay:1.2s"></span>
+              Tone (optional)
+            </label>
+            <div class="flex flex-wrap gap-2">
+              <button class="tone-chip role-chip" id="tone-professional" onclick="selectTone('professional', this)">Professional</button>
+              <button class="tone-chip role-chip" id="tone-casual" onclick="selectTone('casual', this)">Casual</button>
+              <button class="tone-chip role-chip" id="tone-persuasive" onclick="selectTone('persuasive', this)">Persuasive</button>
+              <button class="tone-chip role-chip" id="tone-technical" onclick="selectTone('technical', this)">Technical</button>
+              <button class="tone-chip role-chip" id="tone-creative" onclick="selectTone('creative', this)">Creative</button>
+              <button class="tone-chip role-chip" id="tone-empathetic" onclick="selectTone('empathetic', this)">Empathetic</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ RIGHT: Preview Panel ══ -->
+      <div class="space-y-4 fade-in-delay-2 mt-4 lg:mt-0">
+        <div class="preview-card glass-card p-5 sm:p-6" style="background:#16161f;">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-display font-bold text-base text-white/90 flex items-center gap-2">
+              <span class="text-accent-2">02</span>
+              <span>Your Master Prompt</span>
+            </h2>
+            <!-- Quality meter -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono text-muted" id="qualityLabel">Quality</span>
+              <div class="w-24 h-1.5 bg-faint rounded-full overflow-hidden">
+                <div class="quality-bar-fill" id="qualityBar" style="width:0%"></div>
+              </div>
+              <span class="text-xs font-mono text-accent" id="qualityPct">0%</span>
+            </div>
+          </div>
+
+          <!-- Formatted preview (read-only display) -->
+          <div
+            id="previewDisplay"
+            class="preview-area relative"
+            style="min-height:280px; white-space:pre-wrap; word-break:break-word; cursor:default; user-select:text; overflow-y:auto;"
+          ><span style="color:#4a4a60; font-family:'Space Mono',monospace; font-size:0.82rem;">Your perfectly structured prompt will appear here as you fill in the fields above...</span></div>
+
+          <!-- Word / char count -->
+          <div class="flex items-center justify-between mt-3 mb-4">
+            <div class="flex gap-3">
+              <span class="text-xs font-mono text-muted"><span id="wordCount" class="text-accent">0</span> words</span>
+              <span class="text-xs font-mono text-muted"><span id="charCount" class="text-accent">0</span> chars</span>
+            </div>
+            <div class="flex items-center gap-1.5 text-xs font-mono" id="promptStatus">
+              <span class="w-1.5 h-1.5 rounded-full bg-gray-600 inline-block" id="statusDot"></span>
+              <span id="statusText" class="text-muted">Incomplete</span>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="flex gap-3 flex-wrap">
+            <button id="copyBtn" class="btn-copy flex-1 flex items-center justify-center gap-2" onclick="copyPrompt()">
+              <svg id="copyIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+              <span id="copyText">Copy to Clipboard</span>
+            </button>
+            <button class="btn-clear flex items-center justify-center gap-2" onclick="clearAll()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6M14 11v6"></path>
+              </svg>
+              Clear All
+            </button>
+          </div>
+        </div>
+
+        <!-- Tips card -->
+        <div class="glass-card p-4 fade-in-delay-3">
+          <p class="text-xs font-mono text-muted uppercase tracking-widest mb-3 flex items-center gap-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7c6af7" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+            Prompt Engineering Tips
+          </p>
+          <ul class="space-y-2 text-xs text-gray-400 leading-relaxed">
+            <li class="flex gap-2"><span class="text-accent mt-0.5">→</span> <span><strong class="text-gray-300">Be specific</strong> about the role — "Senior Python Developer with ML expertise" beats "Developer"</span></li>
+            <li class="flex gap-2"><span class="text-accent mt-0.5">→</span> <span><strong class="text-gray-300">Include constraints</strong> in Context — word count, audience, platform, or brand voice</span></li>
+            <li class="flex gap-2"><span class="text-accent mt-0.5">→</span> <span><strong class="text-gray-300">Specify examples</strong> — add "like [example]" in your task for better output quality</span></li>
+            <li class="flex gap-2"><span class="text-accent mt-0.5">→</span> <span><strong class="text-gray-300">Iterate</strong> — copy, paste into ChatGPT/Claude, refine, and rebuild here</span></li>
+          </ul>
+        </div>
+
+        <!-- CTA -->
+        <div class="glass-card p-4 fade-in-delay-4" style="background: linear-gradient(135deg, rgba(124,106,247,0.08) 0%, rgba(224,91,255,0.06) 100%); border-color: rgba(124,106,247,0.2);">
+          <p class="text-xs text-center font-mono text-muted">
+            ✦ Built with PromptCraft · Share with anyone who uses AI ✦
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    Copied to clipboard!
+  </div>
+<footer class="mt-12 border-t border-border pt-6 pb-2 text-center fade-in-delay-4">
+  <p class="text-sm text-muted font-mono">
+    Developed by <span class="text-accent font-bold">Samitha Tharanga</span> | 
+    <a href="https://stimagix.com" target="_blank" class="hover:text-accent-2 transition-colors duration-300">ST Imagix</a>
+  </p>
+</footer>
+  <script>
+    // ─── State ───
+    let selectedTone = '';
+    let promptText = '';
+
+    // ─── Role quick-picks ───
+    function setChip(field, value) {
+      if (field === 'role') {
+        document.getElementById('roleInput').value = value;
+      } else if (field === 'task') {
+        const el = document.getElementById('taskInput');
+        el.value = value + ' ';
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+      }
+      updatePreview();
+    }
+
+    // ─── Tone selector ───
+    function selectTone(tone, btn) {
+      if (selectedTone === tone) {
+        selectedTone = '';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.style.color = '';
+      } else {
+        selectedTone = tone;
+        document.querySelectorAll('.tone-chip').forEach(b => {
+          b.style.background = '';
+          b.style.borderColor = '';
+          b.style.color = '';
+        });
+        btn.style.background = 'rgba(124,106,247,0.25)';
+        btn.style.borderColor = 'rgba(124,106,247,0.6)';
+        btn.style.color = '#c0b4ff';
+      }
+      updatePreview();
+    }
+
+    // ─── Char counters ───
+    function updateCounters() {
+      const task = document.getElementById('taskInput').value;
+      const ctx  = document.getElementById('contextInput').value;
+      const tc   = document.getElementById('taskCount');
+      const cc   = document.getElementById('contextCount');
+      tc.textContent = `${task.length}/400`;
+      cc.textContent = `${ctx.length}/600`;
+      tc.classList.toggle('has-content', task.length > 0);
+      cc.classList.toggle('has-content', ctx.length > 0);
+    }
+
+    // ─── Build prompt text ───
+    function buildPrompt() {
+      const role    = document.getElementById('roleInput').value.trim();
+      const task    = document.getElementById('taskInput').value.trim();
+      const context = document.getElementById('contextInput').value.trim();
+      const format  = document.getElementById('formatInput').value;
+
+      if (!role && !task && !context && !format) return '';
+
+      let parts = [];
+
+      if (role) {
+        parts.push(`🎭 ROLE:\nYou are a ${role}. Leverage your full expertise and best practices in every part of your response.`);
+      }
+
+      if (task) {
+        parts.push(`🎯 TASK:\n${task}`);
+      }
+
+      if (context) {
+        parts.push(`📋 CONTEXT & CONSTRAINTS:\n${context}`);
+      }
+
+      if (selectedTone) {
+        parts.push(`🎨 TONE:\nUse a ${selectedTone} tone throughout your response.`);
+      }
+
+      if (format) {
+        parts.push(`📐 OUTPUT FORMAT:\nPresent your response as ${format}.`);
+      }
+
+      parts.push(`✅ QUALITY CHECK:\nBefore finalizing your response, ensure it is accurate, well-structured, and directly addresses the task. Avoid filler content — every sentence should add value.`);
+
+      return parts.join('\n\n');
+    }
+
+    // ─── Quality score (0–100) ───
+    function calcQuality() {
+      const role    = document.getElementById('roleInput').value.trim();
+      const task    = document.getElementById('taskInput').value.trim();
+      const context = document.getElementById('contextInput').value.trim();
+      const format  = document.getElementById('formatInput').value;
+
+      let score = 0;
+      if (role)    score += 25;
+      if (task)    score += 35;
+      if (context) score += 25;
+      if (format)  score += 10;
+      if (selectedTone) score += 5;
+
+      // Bonus for detail
+      if (task.length > 60)    score = Math.min(score + 5, 100);
+      if (context.length > 80) score = Math.min(score + 5, 100);
+
+      return Math.min(score, 100);
+    }
+
+    // ─── Render preview with syntax highlighting ───
+    function renderPreview(text) {
+      if (!text) {
+        return '<span style="color:#4a4a60; font-family:\'Space Mono\',monospace; font-size:0.82rem;">Your perfectly structured prompt will appear here as you fill in the fields above...</span>';
+      }
+      // Highlight section headers
+      return text
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/(🎭 ROLE:|🎯 TASK:|📋 CONTEXT & CONSTRAINTS:|🎨 TONE:|📐 OUTPUT FORMAT:|✅ QUALITY CHECK:)/g,
+          '<span style="color:#a89cf7;font-weight:700;">$1</span>')
+        .replace(/\n/g,'<br>');
+    }
+
+    // ─── Main update function ───
+    function updatePreview() {
+      updateCounters();
+      promptText = buildPrompt();
+
+      const display = document.getElementById('previewDisplay');
+      display.innerHTML = renderPreview(promptText);
+
+      // Word / char counts
+      const words = promptText ? promptText.trim().split(/\s+/).filter(Boolean).length : 0;
+      document.getElementById('wordCount').textContent = words;
+      document.getElementById('charCount').textContent = promptText.length;
+
+      // Quality
+      const q = calcQuality();
+      document.getElementById('qualityBar').style.width = q + '%';
+      document.getElementById('qualityPct').textContent = q + '%';
+
+      // Status
+      const dot    = document.getElementById('statusDot');
+      const status = document.getElementById('statusText');
+      const role   = document.getElementById('roleInput').value.trim();
+      const task   = document.getElementById('taskInput').value.trim();
+
+      if (q >= 80) {
+        dot.style.background = '#10b981';
+        dot.style.boxShadow  = '0 0 6px rgba(16,185,129,0.8)';
+        status.textContent   = 'Prompt Ready ✦';
+        status.style.color   = '#10b981';
+      } else if (q >= 40) {
+        dot.style.background = '#f59e0b';
+        dot.style.boxShadow  = '0 0 6px rgba(245,158,11,0.8)';
+        status.textContent   = 'Good Start';
+        status.style.color   = '#f59e0b';
+      } else {
+        dot.style.background = '#6b6b85';
+        dot.style.boxShadow  = 'none';
+        status.textContent   = 'Incomplete';
+        status.style.color   = '#6b6b85';
+      }
+    }
+
+    // ─── Copy ───
+    function copyPrompt() {
+      if (!promptText) {
+        shakeCopyBtn();
+        return;
+      }
+      navigator.clipboard.writeText(promptText).then(() => {
+        const btn  = document.getElementById('copyBtn');
+        const text = document.getElementById('copyText');
+        const icon = document.getElementById('copyIcon');
+
+        btn.classList.add('copied');
+        text.textContent = 'Copied!';
+        icon.innerHTML   = '<polyline points="20 6 9 17 4 12" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+
+        showToast();
+
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          text.textContent = 'Copy to Clipboard';
+          icon.innerHTML = '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>';
+        }, 2500);
+      }).catch(() => {
+        // Fallback for older browsers
+        const ta = document.createElement('textarea');
+        ta.value = promptText;
+        ta.style.position = 'fixed';
+        ta.style.opacity  = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast();
+      });
+    }
+
+    function shakeCopyBtn() {
+      const btn = document.getElementById('copyBtn');
+      btn.style.animation = 'none';
+      btn.style.transform = 'translateX(-6px)';
+      setTimeout(() => { btn.style.transform = 'translateX(6px)'; }, 80);
+      setTimeout(() => { btn.style.transform = 'translateX(-4px)'; }, 160);
+      setTimeout(() => { btn.style.transform = 'translateX(4px)'; }, 240);
+      setTimeout(() => { btn.style.transform = ''; btn.style.animation = ''; }, 320);
+    }
+
+    // ─── Toast ───
+    function showToast() {
+      const toast = document.getElementById('toast');
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+
+    // ─── Clear ───
+    function clearAll() {
+      document.getElementById('roleInput').value    = '';
+      document.getElementById('taskInput').value    = '';
+      document.getElementById('contextInput').value = '';
+      document.getElementById('formatInput').value  = '';
+      selectedTone = '';
+      document.querySelectorAll('.tone-chip').forEach(b => {
+        b.style.background = '';
+        b.style.borderColor = '';
+        b.style.color = '';
+      });
+      updatePreview();
+    }
+
+    // ─── Init ───
+    updatePreview();
+  </script>
+</body>
+</html>
