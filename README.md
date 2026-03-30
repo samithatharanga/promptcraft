@@ -64,9 +64,9 @@ I am a Software Developer and the CEO of ST Imagix, dedicated to building digita
 
 🌍 Let's Connect:
 
-Company: ST Imagix LinkedIn | ST Imagix GitHub
+Company: ST Imagix LinkedIn https://www.linkedin.com/company/st-imagix  | ST Imagix GitHub https://github.com/ST-Imagix
 
-Developer: LinkedIn Profile | GitHub Profile
+Developer: LinkedIn Profile https://lk.linkedin.com/in/samitha-tharanga-wijesinghe  | GitHub Profile https://github.com/samithatharanga
 
 If you found this tool useful, don't forget to ⭐ Star this repository!
 
